@@ -44,7 +44,7 @@ ApplicationWindow {
                 id: zone2
                 Layout.fillHeight: true
                 Layout.fillWidth: true
-                initialItem: Home {}
+                initialItem: Qt.resolvedUrl("home/Home.qml")
             }
         }
     }

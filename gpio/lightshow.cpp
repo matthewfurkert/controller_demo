@@ -1,68 +1,95 @@
 #include "lightshow.h"
-#include <QTimer>
+#include "gpio.h"
 #include <QDebug>
 
-LightShow::LightShow(QObject *parent) : QObject(parent)
+LightShow::LightShow(QObject* parent)
+    : QObject(parent),
+    m_pattern({
+        // Fun rhythmic light-show pattern (loops forever)
+        {true,  false, false, 180},
+        {true,  true,  false, 120},
+        {false, true,  false, 180},
+        {false, true,  true,  120},
+        {false, false, true,  250},
+        {true,  false, true,  80},
+        {true,  true,  true,  220},
+        {false, false, false, 90},
+
+        {true,  false, false, 90},
+        {false, true,  false, 90},
+        {false, false, true,  90},
+        {true,  true,  true,  150},
+        {false, false, false, 80}
+    })
 {
-    // === UNIQUE & FUN PATTERN (chase → color pairs → big strobe) ===
-    m_sequence = {
-        {true,  false, false, 220},   // Red
-        {false, true,  false, 160},   // Orange
-        {false, false, true,  220},   // Green
-        {true,  true,  false, 180},   // Red+Orange
-        {false, true,  true,  180},   // Orange+Green
-        {true,  false, true,  180},   // Red+Green
-        {true,  true,  true,  300},   // ALL ON
-        {false, false, false, 140},   // ALL OFF
-        {true,  true,  true,   90},   // Fast strobe
-        {false, false, false,  90},
-        {true,  true,  true,   90},
-        {false, false, false, 280}    // Pause
-    };
+    m_timer.setSingleShot(true);
+    connect(&m_timer, &QTimer::timeout, this, &LightShow::nextStep);
+    m_running = false;
 }
 
-void LightShow::setGPIOs(Gpio::IGpioPin* red, Gpio::IGpioPin* orange, Gpio::IGpioPin* green)
+LightShow::~LightShow()
 {
-    m_gpioRed    = red;
-    m_gpioOrange = orange;
-    m_gpioGreen  = green;
+    stop();
+}
+
+bool LightShow::isRunning() const
+{
+    return m_running;
+}
+
+void LightShow::setLight1(Gpio* gpio)
+{
+    if (m_light1 == gpio) return;
+    m_light1 = gpio;
+    emit light1Changed();
+}
+
+void LightShow::setLight2(Gpio* gpio)
+{
+    if (m_light2 == gpio) return;
+    m_light2 = gpio;
+    emit light2Changed();
+}
+
+void LightShow::setLight3(Gpio* gpio)
+{
+    if (m_light3 == gpio) return;
+    m_light3 = gpio;
+    emit light3Changed();
 }
 
 void LightShow::start()
 {
-    if (m_running) return;
-    stop();
+    if (!m_light1 || !m_light2 || !m_light3) {
+        qWarning() << "LightShow::start() failed — all three GPIOs (light1/light2/light3) must be assigned!";
+        return;
+    }
+    m_currentStep = 0;
     m_running = true;
-    m_step = 0;
-    allOff();
-    QTimer::singleShot(30, this, &LightShow::nextStep);
-    qDebug() << "🎇 Light Show STARTED – unique chase + strobe pattern!";
+    emit runningChanged();
+    nextStep();   // start immediately
 }
 
 void LightShow::stop()
 {
+    m_timer.stop();
     m_running = false;
-    allOff();
-    qDebug() << "Light Show stopped.";
+    emit runningChanged();
+    if (m_light1) m_light1->setValue(false);
+    if (m_light2) m_light2->setValue(false);
+    if (m_light3) m_light3->setValue(false);
 }
 
 void LightShow::nextStep()
 {
-    if (!m_running) return;
+    if (!m_light1 || !m_light2 || !m_light3 || m_pattern.empty()) return;
 
-    const Pattern& p = m_sequence[m_step];
+    const Step& step = m_pattern[m_currentStep];
 
-    if (m_gpioRed)    m_gpioRed->setValue(p.red);
-    if (m_gpioOrange) m_gpioOrange->setValue(p.orange);
-    if (m_gpioGreen)  m_gpioGreen->setValue(p.green);
+    m_light1->setValue(step.firstLight);
+    m_light2->setValue(step.secondLight);
+    m_light3->setValue(step.thirdLight);
 
-    m_step = (m_step + 1) % m_sequence.size();
-    QTimer::singleShot(p.delayMs, this, &LightShow::nextStep);
-}
-
-void LightShow::allOff()
-{
-    if (m_gpioRed)    m_gpioRed->setValue(false);
-    if (m_gpioOrange) m_gpioOrange->setValue(false);
-    if (m_gpioGreen)  m_gpioGreen->setValue(false);
+    m_timer.start(step.durationMs);
+    m_currentStep = (m_currentStep + 1) % m_pattern.size();
 }

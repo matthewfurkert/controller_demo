@@ -22,23 +22,30 @@ qt_add_qml_module(appcontroller_stmp
         RESOURCES go_fonts/Go-Bold-Italic.ttf go_fonts/Go-Bold.ttf go_fonts/Go-Italic.ttf go_fonts/Go-Medium-Italic.ttf go_fonts/Go-Medium.ttf go_fonts/Go-Regular.ttf go_fonts/README
         RESOURCES assets/BrushedMetal.jpg
         QML_FILES can/Can.qml
-        SOURCES gpio/gpiofactory.h gpio/gpiofactory.cpp
-        SOURCES gpio/igpiopin.h
-        SOURCES gpio/mockgpiopin.h gpio/mockgpiopin.cpp
-        SOURCES gpio/realgpiopin.h gpio/realgpiopin.cpp
-        SOURCES gpio/lightshow.h gpio/lightshow.cpp
         QML_FILES i2c/I2c.qml
         RESOURCES assets/dial_no_background.png assets/dial_original.jpg assets/dial_svg.svg
+        SOURCES gpio/igpio.h
+        SOURCES gpio/gpio.h gpio/gpio.cpp
+        SOURCES gpio/mockgpio.h
+        SOURCES gpio/realgpio.h gpio/realgpio.cpp
+        SOURCES gpio/lightshow.h gpio/lightshow.cpp
 )
 
-option(USE_REAL_GPIO "Use real libgpiod (requires libgpiod-dev on target/desktop)" OFF)
+target_include_directories(appcontroller_stmp PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/home
+    ${CMAKE_CURRENT_SOURCE_DIR}/gpio
+    ${CMAKE_CURRENT_SOURCE_DIR}/i2c
+    ${CMAKE_CURRENT_SOURCE_DIR}/can
+)
 
-if(USE_REAL_GPIO)
+option(USE_REAL_DEV "Use real libgpiod (requires libgpiod-dev on target/desktop)" OFF)
+
+if(USE_REAL_DEV)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(LIBGPIOD REQUIRED libgpiod)
     target_link_libraries(appcontroller_stmp PRIVATE ${LIBGPIOD_LIBRARIES})
     target_include_directories(appcontroller_stmp PRIVATE ${LIBGPIOD_INCLUDE_DIRS})
-    target_compile_definitions(appcontroller_stmp PRIVATE USE_REAL_GPIO)
+    target_compile_definitions(appcontroller_stmp PRIVATE USE_REAL_DEV)
     message(STATUS "Building with REAL GPIO (libgpiod)")
 else()
     message(STATUS "Building with MOCK GPIO (perfect for Windows/WSL desktop)")

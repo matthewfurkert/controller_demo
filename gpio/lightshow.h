@@ -1,33 +1,64 @@
-#pragma once
+#ifndef LIGHTSHOW_H
+#define LIGHTSHOW_H
+
 #include <QObject>
-#include <QVector>
-#include "igpiopin.h"   // matches your header
+// #include <QtQml>
+#include <QtQml/qqmlregistration.h>
+#include <QTimer>
+#include <vector>
+
+class Gpio;   // forward declaration (QML works perfectly with this)
 
 class LightShow : public QObject
 {
     Q_OBJECT
-public:
-    explicit LightShow(QObject *parent = nullptr);
+    QML_ELEMENT
+    Q_PROPERTY(bool running READ isRunning NOTIFY runningChanged)
+    Q_PROPERTY(Gpio* light1 READ light1 WRITE setLight1 NOTIFY light1Changed)
+    Q_PROPERTY(Gpio* light2 READ light2 WRITE setLight2 NOTIFY light2Changed)
+    Q_PROPERTY(Gpio* light3 READ light3 WRITE setLight3 NOTIFY light3Changed)
 
-    void setGPIOs(Gpio::IGpioPin* red, Gpio::IGpioPin* orange, Gpio::IGpioPin* green);
+public:
+    explicit LightShow(QObject* parent = nullptr);
+    ~LightShow() override;
 
     Q_INVOKABLE void start();
     Q_INVOKABLE void stop();
+    bool isRunning() const;
+
+    Gpio* light1() const { return m_light1; }
+    Gpio* light2() const { return m_light2; }
+    Gpio* light3() const { return m_light3; }
+
+public slots:
+    void setLight1(Gpio* gpio);
+    void setLight2(Gpio* gpio);
+    void setLight3(Gpio* gpio);
+
+signals:
+    void runningChanged();
+    void light1Changed();
+    void light2Changed();
+    void light3Changed();
+
+private slots:
+    void nextStep();
 
 private:
-    void nextStep();
-    void allOff();
+    bool m_running = false;
+    Gpio* m_light1    = nullptr;
+    Gpio* m_light2 = nullptr;
+    Gpio* m_light3  = nullptr;
 
-    struct Pattern {
-        bool red, orange, green;
-        int delayMs;
+    QTimer m_timer;
+    size_t m_currentStep = 0;
+
+    struct Step {
+        bool firstLight, secondLight, thirdLight;
+        int durationMs;
     };
 
-    QVector<Pattern> m_sequence;
-    int m_step = 0;
-    bool m_running = false;
-
-    Gpio::IGpioPin* m_gpioRed = nullptr;
-    Gpio::IGpioPin* m_gpioOrange = nullptr;
-    Gpio::IGpioPin* m_gpioGreen = nullptr;
+    const std::vector<Step> m_pattern;
 };
+
+#endif // LIGHTSHOW_H

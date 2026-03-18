@@ -44,18 +44,18 @@ Pane {
     // Component definitions for lazy loading
     Component {
         id: homeComponent
-        Home {}
+        Loader { source: "home/Home.qml" }
     }
     Component {
         id: gpioComponent
-        Gpio {}
+        Loader { source: "gpio/Gpio.qml" }
     }
     Component {
         id: i2cComponent
-        I2c {}
+        Loader { source: "i2c/I2c.qml" }
     }
     Component {
         id: canComponent
-        Can {}
+        Loader { source: "can/Can.qml" }
     }
 }

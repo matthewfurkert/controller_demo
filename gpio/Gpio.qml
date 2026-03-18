@@ -1,132 +1,135 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
+import QtQuick.Window
+import QtQuick.Layouts
+import controller_stmp
 
-Rectangle {
-    color: "transparent"
+Pane {
 
-    Label {
-        anchors.top: parent.top
-        anchors.horizontalCenter: parent.horizontalCenter
-        text: "GPIO Test"
-        font.pixelSize: 24
-        font.bold: true
-        color: "black"
-    }
+    Gpio {id: gpioBoard; chip: 0; pin: 14; value: false}
+    Gpio {id: gpioRed; chip: 5; pin: 4; value: false}
+    Gpio {id: gpioOrange; chip: 5; pin: 6; value: false}
+    Gpio {id: gpioGreen; chip: 5; pin: 3; value: false}
 
-    Column {
+    LightShow { id: lightShow; light1: gpioRed
+        light2: gpioOrange; light3:  gpioGreen }
+
+    anchors.centerIn: parent
+    background: null
+
+    ColumnLayout {
         anchors.left: parent.left
         anchors.leftMargin: 80
         anchors.verticalCenter: parent.verticalCenter
         spacing: 20
-        enabled: !switchAuto.checked
-        opacity: switchAuto.checked ? 0.4 : 1.0
 
         CheckBox {
             id: checkRed
-            text: qsTr("Red")
             checked: gpioRed.value
-            onClicked: gpioRed.toggle()
+            onClicked: {
+                    if (lightShow.running) { lightShow.stop(); showButton.text = "Light Show" }
+                    gpioRed.toggle()
+                }
             indicator: Rectangle {
                 implicitWidth: 72; implicitHeight: 72; radius: 6
-                border.color: checkRed.checked ? "#ef4444" : "#9ca3af"
-                color: checkRed.checked ? "#f87171" : "white"
+                border.color: "red"
+                color: checkRed.checked ? "red" : "white"
             }
-            contentItem: Text {
-                text: checkRed.text; color: "#b91c1c"; leftPadding: 72
-                font.pixelSize: 24; verticalAlignment: Text.AlignVCenter
+            contentItem: Column { leftPadding: 72; spacing: 2
+                Text { text: qsTr("Red"); color: "red"; font.pixelSize: 24 }
+                Text { text: qsTr("(PF4)"); color: "red"; font.pixelSize: 20 }
             }
         }
 
         CheckBox {
             id: checkOrange
-            text: qsTr("Orange")
             checked: gpioOrange.value
-            onClicked: gpioOrange.toggle()
+            onClicked: {
+                    if (lightShow.running) { lightShow.stop(); showButton.text = "Light Show" }
+                    gpioOrange.toggle()
+                }
             indicator: Rectangle {
                 implicitWidth: 72; implicitHeight: 72; radius: 6
-                border.color: checkOrange.checked ? "#f97316" : "#9ca3af"
-                color: checkOrange.checked ? "#fb923c" : "white"
+                border.color: "orange"
+                color: checkOrange.checked ? "orange" : "white"
             }
-            contentItem: Text {
-                text: checkOrange.text; color: "#b45309"; leftPadding: 72
-                font.pixelSize: 24; verticalAlignment: Text.AlignVCenter
+            contentItem: Column { leftPadding: 72; spacing: 2
+                Text { text: qsTr("Orange"); color: "orange"; font.pixelSize: 24 }
+                Text { text: qsTr("(PF6)"); color: "orange"; font.pixelSize: 20 }
             }
         }
 
         CheckBox {
             id: checkGreen
-            text: qsTr("Green")
             checked: gpioGreen.value
-            onClicked: gpioGreen.toggle()
+            onClicked: {
+                    if (lightShow.running) { lightShow.stop(); showButton.text = "Light Show" }
+                    gpioGreen.toggle()
+                }
             indicator: Rectangle {
                 implicitWidth: 72; implicitHeight: 72; radius: 6
-                border.color: checkGreen.checked ? "#22c55e" : "#9ca3af"
-                color: checkGreen.checked ? "#4ade80" : "white"
+                border.color: "green"
+                color: checkGreen.checked ? "green" : "white"
             }
-            contentItem: Text {
-                text: checkGreen.text; color: "#166534"; leftPadding: 72
-                font.pixelSize: 24; verticalAlignment: Text.AlignVCenter
+            contentItem: Column { leftPadding: 72; spacing: 2
+                Text { text: qsTr("Green"); color: "green"; font.pixelSize: 24 }
+                Text { text: qsTr("(PF3)"); color: "green"; font.pixelSize: 20 }
             }
         }
     }
-
-    Column {
+    ColumnLayout {
         anchors.right: parent.right
         anchors.top: parent.top
-        width: parent.width * 0.5  // adjust width as needed
+        width: parent.width * 0.5
         height: parent.height
-        spacing: 20
 
-        // Spacer to push Switch 20% down
-        Item {
-            width: parent.width
-            height: parent.height * 0.2
-        }
-
-        Switch {
-            id: switchAuto
-            text: qsTr("Manual / Auto")
-            scale: 2
-            contentItem: Text {
-                text: switchAuto.text; color: "Blue"; leftPadding: 72
-                font.pixelSize: 12; verticalAlignment: Text.AlignVCenter
+        RowLayout {
+            spacing: 40
+            Layout.alignment: Qt.AlignHCenter
+            ColumnLayout {
+                spacing: 30
+                Text {
+                        text: qsTr("OFF / ON"); color: "black"
+                        font.pixelSize: 30; font.bold: true
+                        Layout.alignment: Qt.AlignHCenter
+                    }
+                Switch {
+                    id: boardLed
+                    scale: 3
+                    Layout.alignment: Qt.AlignHCenter
+                    checked: !gpioBoard.value
+                    onCheckedChanged: gpioBoard.value = !checked
+                }
             }
-            anchors.horizontalCenter: parent.horizontalCenter
-            checked: false
-            onCheckedChanged: {
-                if (!checked) {
-                    lightShow.stop()
-                    lightShowButton.text = "Light Show"
+            ColumnLayout {
+                Layout.alignment: Qt.AlignVCenter
+                Item { Layout.preferredHeight: 50 }
+                Text {
+                    text: qsTr("Board Led")
+                    color: "Blue"; font.pixelSize: 24
+                    verticalAlignment: Text.AlignBottom
+                }
+                Text {
+                    text: qsTr("(PA14)")
+                    color: "Blue"; font.pixelSize: 20
+                    verticalAlignment: Text.AlignBottom
                 }
             }
         }
-        // Spacer to push button 20% down
-        Item {
-            width: parent.width
-            height: parent.height * 0.2
-        }
+        Item { Layout.preferredHeight: 25 }
         Button {
-            id: lightShowButton
+            id: showButton
+            Layout.alignment: Qt.AlignHCenter
             text: qsTr("Light Show")
-            anchors.horizontalCenter: parent.horizontalCenter
-            enabled: switchAuto.checked
-
-            font.pixelSize: 26
-            font.bold: true
-            padding: 22
+            font.pixelSize: 26; font.bold: true
 
             background: Rectangle {
-                implicitWidth: 280
-                implicitHeight: 85
-                radius: 16
-                color: enabled ? (parent.down ? "#1e40af" : "#2563eb") : "#94a3b8"
-                border.color: "#1e40af"
-                border.width: 3
+                implicitWidth: 280; implicitHeight: 85; radius: 16
+                color: "purple"; border.color: "brown"; border.width: 3
             }
 
             contentItem: Text {
-                text: parent.text
-                font: parent.font
+                text: parent.text; font: parent.font
                 color: "white"
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
@@ -134,13 +137,15 @@ Rectangle {
 
             onClicked: {
                 if (text === "Light Show") {
-                    lightShow.start()
-                    text = "Stop Show"
+                    lightShow.start(); text = "Stop Show"
                 } else {
-                    lightShow.stop()
-                    text = "Light Show"
+                    lightShow.stop(); text = "Light Show"
                 }
             }
+        }
+        Text {
+            text: "Build type: " + (gpioBoard.isReal ? "REAL (libgpiod)" : "MOCK")
+            font.pixelSize: 20; color: "orange"; Layout.alignment: Qt.AlignHCenter
         }
     }
 }
