@@ -2,8 +2,7 @@
 #define LIGHTSHOW_H
 
 #include <QObject>
-// #include <QtQml>
-#include <QtQml/qqmlregistration.h>
+#include <QtQml>
 #include <QTimer>
 #include <vector>
 

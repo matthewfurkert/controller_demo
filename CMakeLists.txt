@@ -29,6 +29,13 @@ qt_add_qml_module(appcontroller_stmp
         SOURCES gpio/mockgpio.h
         SOURCES gpio/realgpio.h gpio/realgpio.cpp
         SOURCES gpio/lightshow.h gpio/lightshow.cpp
+        SOURCES i2c/smbus.hpp
+        SOURCES i2c/ias5600.h
+        SOURCES
+        SOURCES i2c/mockas5600.h
+        SOURCES i2c/realas5600.h i2c/realas5600.cpp
+        SOURCES
+        SOURCES i2c/as5600.h i2c/as5600.cpp
 )
 
 target_include_directories(appcontroller_stmp PRIVATE
